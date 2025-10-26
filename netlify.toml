@@ -1,10 +1,13 @@
 [build]
   functions = "netlify/functions"
   publish = "."
+  command = "echo 'Iniciando build Netlify...'" # Removido o comando npm complexo
   
-  # Força a versão do Node.js durante o build e o runtime da Function
   [build.environment]
     NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "esbuild" # Usa o bundler mais moderno e confiável
 
 [[headers]]
   for = "/*"

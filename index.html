@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Linhas SPTrans (Netlify Proxy) - Final</title>
     <style>
-        /* CSS Omitido por brevidade. Mantenha o seu CSS aqui. */
+        /* ... Seu CSS ... */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; }
         .container { max-width: 650px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
         h1 { color: #005a9c; border-bottom: 2px solid #005a9c; padding-bottom: 10px; margin-bottom: 20px; }
@@ -81,14 +81,12 @@
         }
     }
     
-    // =======================================================
-    // FUNÇÃO: BUSCA DE PREVISÃO
-    // =======================================================
+    // ... Funções de Previsão e Exibição (MANTIDAS) ...
+
     async function verPrevisao(codigoLinha, elementoId) {
         const previsaoDiv = document.getElementById(elementoId);
         previsaoDiv.innerHTML = '<span style="color: #007bff;">Buscando localização...</span>';
         
-        // Passamos 'operation=previsao' na query string
         const urlProxy = `${PROXY_URL}?operation=previsao&codigoLinha=${codigoLinha}`;
 
         try {
@@ -109,9 +107,6 @@
         }
     }
 
-    // =======================================================
-    // FUNÇÕES DE EXIBIÇÃO (MANTIDAS)
-    // =======================================================
     function exibirPrevisao(linhasPrevisao, previsaoDiv) {
         let html = '';
         

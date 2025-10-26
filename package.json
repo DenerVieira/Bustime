@@ -2,12 +2,12 @@
   "name": "sptrans-netlify-proxy",
   "version": "1.0.0",
   "description": "Proxy para API Olho Vivo no Netlify Functions",
-  "main": "index.js",
   "scripts": {
-    "netlify-build": "echo 'Netlify build running...'"
+    "start": "echo 'Run locally using Netlify CLI'",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "node-fetch": "^2.6.1"
+    
   },
   "engines": {
     "node": "18.x"
