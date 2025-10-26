@@ -16,7 +16,8 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
     const authBody = await authResponse.text();
 
     if (authBody.trim() !== 'true') {
-        throw new Error("Autenticação SPTrans falhou. Token inválido ou serviço indisponível.");
+        // Lança um erro claro para ser pego pelo bloco try/catch
+        throw new Error("Autenticação SPTrans falhou. O Token pode estar expirado ou inválido.");
     }
 
     // Extração do Cookie
@@ -29,7 +30,7 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
     }
     
     if (!apiCredentials) {
-        throw new Error("Cookie de sessão 'apiCredentials' não foi encontrado.");
+        throw new Error("Cookie de sessão 'apiCredentials' não foi encontrado após a autenticação.");
     }
 
     // --- PASSO B: CONSULTA (GET) USANDO O COOKIE ---
@@ -39,6 +40,12 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
             'Cookie': apiCredentials 
         }
     });
+
+    // Se a API retornar um status de erro (400, 500, etc.), ainda tentamos ler o JSON
+    if (!searchResponse.ok && searchResponse.status !== 404) {
+        const errorData = await searchResponse.json().catch(() => ({ message: "Erro desconhecido na API SPTrans." }));
+        throw new Error(`SPTrans retornou status ${searchResponse.status}: ${errorData.message || JSON.stringify(errorData)}`);
+    }
 
     const data = await searchResponse.json();
     return { status: searchResponse.status, data: data };
@@ -90,11 +97,15 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error(`Erro na operação ${operation}:`, error.message);
+        // Captura qualquer erro de autenticação, cookie ou erro de API
+        console.error(`Erro fatal na operação ${operation}:`, error.message);
         return {
             statusCode: 500,
             headers: corsHeaders,
-            body: JSON.stringify({ error: `Erro na operação ${operation}: ${error.message}. Verifique o token e os logs de build.` })
+            body: JSON.stringify({ 
+                error: `Falha no Proxy Netlify: ${error.message}`,
+                detalhe: "Verifique os logs de build e function no Netlify para detalhes sobre a falha do Node.js."
+            })
         };
     }
 };
