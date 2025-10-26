@@ -16,7 +16,7 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
     const authBody = await authResponse.text();
 
     if (authBody.trim() !== 'true') {
-        throw new Error("Autenticação SPTrans falhou. Token inválido.");
+        throw new Error("Autenticação SPTrans falhou. Token inválido ou serviço indisponível.");
     }
 
     // Extração do Cookie
@@ -47,8 +47,6 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
 exports.handler = async (event, context) => {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST',
-        'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
     };
 
@@ -56,10 +54,9 @@ exports.handler = async (event, context) => {
         return { statusCode: 200, headers: corsHeaders, body: '' };
     }
 
-    // Identifica o endpoint a partir do caminho (ex: /api/buscar/...)
-    const path = event.path.split('/').filter(p => p !== '');
-    const operation = path[1] || 'buscar'; // Assume 'buscar' se não houver path extra
-
+    // **MUDANÇA:** Lemos a operação diretamente da query string
+    const operation = event.queryStringParameters.operation;
+    
     let endpoint, queryParams;
 
     if (operation === 'buscar') {
@@ -79,7 +76,7 @@ exports.handler = async (event, context) => {
         queryParams = `?codigoLinha=${codigoLinha}`;
 
     } else {
-        return { statusCode: 404, headers: corsHeaders, body: JSON.stringify({ error: `Operação não suportada: ${operation}` }) };
+        return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: `Operação não especificada ou não suportada: ${operation}. Use 'buscar' ou 'previsao'.` }) };
     }
 
 
@@ -97,7 +94,7 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 500,
             headers: corsHeaders,
-            body: JSON.stringify({ error: `Erro na operação ${operation}: ${error.message}` })
+            body: JSON.stringify({ error: `Erro na operação ${operation}: ${error.message}. Verifique o token e os logs de build.` })
         };
     }
 };
