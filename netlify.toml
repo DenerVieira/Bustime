@@ -1,0 +1,27 @@
+[build]
+  # Configuração de Build
+  functions = "netlify/functions"
+  publish = "." # Onde o index.html está
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*" 
+
+# Redirecionamento 1: Busca de Linhas
+[[redirects]]
+  from = "/api/buscar/*"
+  to = "/.netlify/functions/sptrans_proxy"
+  status = 200
+
+# Redirecionamento 2: Previsão de Chegada
+[[redirects]]
+  from = "/api/previsao/*"
+  to = "/.netlify/functions/sptrans_proxy"
+  status = 200
+
+# Redirecionamento 3 (Genérico para a rota raiz, caso necessário)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/sptrans_proxy"
+  status = 200

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Linhas SPTrans (Netlify Proxy) - Melhorado</title>
+    <style>
+        /* CSS Omitido por brevidade. Mantenha o seu CSS aqui. */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        h1 { color: #005a9c; border-bottom: 2px solid #005a9c; padding-bottom: 10px; margin-bottom: 20px; }
+        input[type="text"] { width: calc(100% - 100px); padding: 12px; margin-right: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        button { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #resultados { margin-top: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; background-color: #ffffff; }
+        #status { margin-bottom: 15px; font-weight: bold; color: #333; }
+        /* CSS para Resultados de Linha */
+        .linha-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; flex-direction: column; }
+        .linha-item:last-child { border-bottom: none; }
+        .letreiro { font-weight: bold; color: #333; font-size: 1.1em; }
+        .terminais { font-size: 0.9em; color: #666; margin-top: 3px; }
+        .metadata { font-size: 0.75em; color: #aaa; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;}
+        /* CSS para Previsão */
+        .previsao-box { margin-top: 10px; padding: 10px; background-color: #f9f9f9; border-left: 4px solid #005a9c; }
+        .onibus-item { margin-bottom: 5px; font-size: 0.9em; color: #333; }
+        .tempo-chegada { font-weight: bold; color: #28a745; }
+        .no-vehicles { color: #dc3545; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Busca de Linhas SPTrans (Netlify Proxy)</h1>
+
+    <div id="input-group" style="display: flex; align-items: center;">
+        <input type="text" id="termosBusca" placeholder="Ex: Lapa, 8000" value="Lapa">
+        <button onclick="buscarLinhas()">Buscar</button>
+    </div>
+
+    <h2 style="margin-top: 25px; font-size: 1.2em; color: #555;">Status da Busca</h2>
+    <div id="status">Aguardando termo de busca...</div>
+    
+    <h2 style="margin-top: 25px; font-size: 1.2em; color: #555;">Resultados da Consulta</h2>
+    <div id="resultados"></div>
+</div>
+
+<script>
+    // URLs que o netlify.toml irá redirecionar para a nossa única função (sptrans_proxy.js)
+    const PROXY_URL_BUSCA = "/api/buscar"; 
+    const PROXY_URL_PREVISAO = "/api/previsao"; 
+    const STATUS_DIV = document.getElementById('status');
+    const RESULTADOS_DIV = document.getElementById('resultados');
+
+    async function buscarLinhas() {
+        RESULTADOS_DIV.innerHTML = 'Carregando...';
+        const termosBusca = document.getElementById('termosBusca').value.trim();
+
+        if (!termosBusca) {
+            STATUS_DIV.innerHTML = "Digite um termo de busca.";
+            RESULTADOS_DIV.innerHTML = '';
+            return;
+        }
+
+        STATUS_DIV.innerHTML = `Chamando Proxy para buscar linhas por: "${termosBusca}"...`;
+        
+        const urlProxy = `${PROXY_URL_BUSCA}?termosBusca=${encodeURIComponent(termosBusca)}`;
+
+        try {
+            const response = await fetch(urlProxy);
+            const linhas = await response.json();
+
+            if (response.ok) {
+                exibirResultados(linhas);
+            } else {
+                STATUS_DIV.innerHTML = `❌ Erro na consulta via Proxy (Status: ${response.status}).`;
+                RESULTADOS_DIV.innerHTML = `<pre>Erro da Function: ${linhas.error || JSON.stringify(linhas)}</pre>`;
+            }
+
+        } catch (error) {
+            STATUS_DIV.innerHTML = `❌ Erro de rede/servidor ao chamar o Proxy: ${error.message}`;
+            console.error("Erro na busca via Proxy:", error);
+        }
+    }
+    
+    // =======================================================
+    // FUNÇÃO: BUSCA DE PREVISÃO
+    // =======================================================
+    async function verPrevisao(codigoLinha, elementoId) {
+        const previsaoDiv = document.getElementById(elementoId);
+        previsaoDiv.innerHTML = '<span style="color: #007bff;">Buscando localização...</span>';
+        
+        // Chamamos a rota de previsão
+        const urlProxy = `${PROXY_URL_PREVISAO}?codigoLinha=${codigoLinha}`;
+
+        try {
+            const response = await fetch(urlProxy);
+            const data = await response.json();
+
+            if (response.ok && data.l) {
+                exibirPrevisao(data.l, previsaoDiv);
+            } else if (data.message && data.message.includes('Não Autorizado')) {
+                previsaoDiv.innerHTML = '<span class="no-vehicles">Sessão expirada. Tente fazer uma nova busca.</span>';
+            } else {
+                previsaoDiv.innerHTML = `<span class="no-vehicles">Erro: ${data.error || 'Nenhuma informação de previsão disponível.'}</span>`;
+            }
+
+        } catch (error) {
+            previsaoDiv.innerHTML = `<span class="no-vehicles">Erro de rede: ${error.message}</span>`;
+            console.error("Erro na previsão:", error);
+        }
+    }
+
+    // =======================================================
+    // FUNÇÕES DE EXIBIÇÃO (MANTIDAS)
+    // =======================================================
+    function exibirPrevisao(linhasPrevisao, previsaoDiv) {
+        let html = '';
+        
+        if (linhasPrevisao.length === 0) {
+            previsaoDiv.innerHTML = '<span class="no-vehicles">Nenhuma previsão de ônibus para esta linha.</span>';
+            return;
+        }
+
+        linhasPrevisao.forEach(linha => {
+            if (linha.vs && linha.vs.length > 0) {
+                linha.vs.forEach(veiculo => {
+                    const tempoChegada = veiculo.t == 1 ? 'Chegando' : `${veiculo.t} min`;
+                    const tempoClass = veiculo.t <= 5 ? 'tempo-chegada' : '';
+
+                    html += `<div class="onibus-item">
+                                Veículo ${veiculo.p} - Chega em: <span class="${tempoClass}">${tempoChegada}</span>
+                            </div>`;
+                });
+            } else {
+                html += '<span class="no-vehicles">Nenhum veículo em trânsito no momento.</span>';
+            }
+        });
+        
+        previsaoDiv.innerHTML = html;
+    }
+
+
+    function exibirResultados(linhas) {
+        if (!linhas || linhas.length === 0) {
+            RESULTADOS_DIV.innerHTML = "<p>Nenhuma linha encontrada para o termo digitado.</p>";
+            STATUS_DIV.innerHTML += " (0 resultados)";
+            return;
+        }
+
+        STATUS_DIV.innerHTML += ` (${linhas.length} resultados)`;
+        
+        let html = '';
+        linhas.forEach(linha => {
+            const sentido = linha.sl == 1 ? 'Sentido 1 (Principal)' : 'Sentido 2 (Secundário)';
+            const tipoLinha = linha.tl == 10 ? 'BASE' : `ATENDIMENTO (${linha.tl})`;
+            const previsaoId = `previsao-${linha.cl}`; 
+            
+            html += `<div class="linha-item">
+                        <span class="letreiro">${linha.lt}-${linha.tl}</span>
+                        <span class="terminais">${linha.tp} ↔ ${linha.ts}</span>
+                        <div class="metadata">
+                            <span>Cód. Linha (cl): ${linha.cl} | ${sentido} | Tipo: ${tipoLinha}</span>
+                            <button onclick="verPrevisao('${linha.cl}', '${previsaoId}')">Ver Previsão</button>
+                        </div>
+                        <div id="${previsaoId}" class="previsao-box" style="display: block;">
+                            Clique em "Ver Previsão" para a localização dos ônibus.
+                        </div>
+                    </div>`;
+        });
+        
+        RESULTADOS_DIV.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
