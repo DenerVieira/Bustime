@@ -4,7 +4,7 @@
   "description": "Proxy para API Olho Vivo no Netlify Functions",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "netlify-build": "echo 'Netlify build running...'"
   },
   "dependencies": {
     "node-fetch": "^2.6.1"

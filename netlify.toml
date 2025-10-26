@@ -1,10 +1,8 @@
 [build]
-  # Configuração de Build
   functions = "netlify/functions"
-  publish = "." # Onde o index.html está
+  publish = "."
 
 [[headers]]
   for = "/*"
   [headers.values]
-    # Mantemos o CORS para garantir que o navegador não bloqueie
     Access-Control-Allow-Origin = "*" 

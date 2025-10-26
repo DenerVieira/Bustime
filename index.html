@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Linhas SPTrans (Netlify Proxy) - Final</title>
     <style>
-        /* CSS Base */
+        /* CSS Omitido por brevidade. Mantenha o seu CSS aqui. */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; }
         .container { max-width: 650px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
         h1 { color: #005a9c; border-bottom: 2px solid #005a9c; padding-bottom: 10px; margin-bottom: 20px; }
@@ -45,7 +45,7 @@
 </div>
 
 <script>
-    // **MUDANÇA CRÍTICA:** A URL aponta para o caminho da função Netlify
+    // **A URL aponta para o caminho direto da função Netlify**
     const PROXY_URL = "/.netlify/functions/sptrans_proxy"; 
     const STATUS_DIV = document.getElementById('status');
     const RESULTADOS_DIV = document.getElementById('resultados');
@@ -77,8 +77,7 @@
             }
 
         } catch (error) {
-            // Este catch deve ser o último a ser ativado
-            STATUS_DIV.innerHTML = `❌ Erro de rede/servidor ao chamar o Proxy: ${error.message}`;
+            STATUS_DIV.innerHTML = `❌ Erro de rede/servidor ao chamar o Proxy: ${error.message}. (Verifique os logs de Function no Netlify)`;
             console.error("Erro na busca via Proxy:", error);
         }
     }
