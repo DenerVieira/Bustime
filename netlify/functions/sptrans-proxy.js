@@ -1,5 +1,5 @@
 // netlify/functions/sptrans_proxy.js
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); 
 
 const TOKEN = "c4e93e161ac7beeac6efb8cfecfab38750f3c0e8f96d2df493ef81ad55340ef5";
 const API_BASE = "https://api.olhovivo.sptrans.com.br/v2.1";
@@ -16,7 +16,6 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
     const authBody = await authResponse.text();
 
     if (authBody.trim() !== 'true') {
-        // Lança um erro claro para ser pego pelo bloco try/catch
         throw new Error("Autenticação SPTrans falhou. O Token pode estar expirado ou inválido.");
     }
 
@@ -41,7 +40,6 @@ async function authAndFetchSPTrans(endpoint, queryParams) {
         }
     });
 
-    // Se a API retornar um status de erro (400, 500, etc.), ainda tentamos ler o JSON
     if (!searchResponse.ok && searchResponse.status !== 404) {
         const errorData = await searchResponse.json().catch(() => ({ message: "Erro desconhecido na API SPTrans." }));
         throw new Error(`SPTrans retornou status ${searchResponse.status}: ${errorData.message || JSON.stringify(errorData)}`);
@@ -61,7 +59,6 @@ exports.handler = async (event, context) => {
         return { statusCode: 200, headers: corsHeaders, body: '' };
     }
 
-    // Lemos a operação diretamente da query string
     const operation = event.queryStringParameters.operation;
     
     let endpoint, queryParams;
@@ -97,14 +94,13 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        // Captura qualquer erro de autenticação, cookie ou erro de API
         console.error(`Erro fatal na operação ${operation}:`, error.message);
         return {
             statusCode: 500,
             headers: corsHeaders,
             body: JSON.stringify({ 
                 error: `Falha no Proxy Netlify: ${error.message}`,
-                detalhe: "Verifique os logs de build e function no Netlify para detalhes sobre a falha do Node.js."
+                detalhe: "O 'Unexpected token <' significa que a função Node.js falhou ao iniciar, geralmente devido à importação de módulos. Verifique o 'package.json' dentro de /netlify/functions."
             })
         };
     }
