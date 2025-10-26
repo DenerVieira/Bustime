@@ -1,6 +1,10 @@
 [build]
   functions = "netlify/functions"
   publish = "."
+  
+  # Força a versão do Node.js durante o build e o runtime da Function
+  [build.environment]
+    NODE_VERSION = "18"
 
 [[headers]]
   for = "/*"
