@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta de Linhas SPTrans (Netlify Proxy) - Melhorado</title>
+    <title>Consulta de Linhas SPTrans (Netlify Proxy) - Final</title>
     <style>
-        /* CSS Omitido por brevidade. Mantenha o seu CSS aqui. */
+        /* CSS Base */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f0f2f5; }
         .container { max-width: 650px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
         h1 { color: #005a9c; border-bottom: 2px solid #005a9c; padding-bottom: 10px; margin-bottom: 20px; }
@@ -45,9 +45,8 @@
 </div>
 
 <script>
-    // URLs que o netlify.toml irá redirecionar para a nossa única função (sptrans_proxy.js)
-    const PROXY_URL_BUSCA = "/api/buscar"; 
-    const PROXY_URL_PREVISAO = "/api/previsao"; 
+    // **MUDANÇA CRÍTICA:** A URL aponta para o caminho da função Netlify
+    const PROXY_URL = "/.netlify/functions/sptrans_proxy"; 
     const STATUS_DIV = document.getElementById('status');
     const RESULTADOS_DIV = document.getElementById('resultados');
 
@@ -63,7 +62,8 @@
 
         STATUS_DIV.innerHTML = `Chamando Proxy para buscar linhas por: "${termosBusca}"...`;
         
-        const urlProxy = `${PROXY_URL_BUSCA}?termosBusca=${encodeURIComponent(termosBusca)}`;
+        // Passamos 'operation=buscar' na query string
+        const urlProxy = `${PROXY_URL}?operation=buscar&termosBusca=${encodeURIComponent(termosBusca)}`;
 
         try {
             const response = await fetch(urlProxy);
@@ -77,6 +77,7 @@
             }
 
         } catch (error) {
+            // Este catch deve ser o último a ser ativado
             STATUS_DIV.innerHTML = `❌ Erro de rede/servidor ao chamar o Proxy: ${error.message}`;
             console.error("Erro na busca via Proxy:", error);
         }
@@ -89,8 +90,8 @@
         const previsaoDiv = document.getElementById(elementoId);
         previsaoDiv.innerHTML = '<span style="color: #007bff;">Buscando localização...</span>';
         
-        // Chamamos a rota de previsão
-        const urlProxy = `${PROXY_URL_PREVISAO}?codigoLinha=${codigoLinha}`;
+        // Passamos 'operation=previsao' na query string
+        const urlProxy = `${PROXY_URL}?operation=previsao&codigoLinha=${codigoLinha}`;
 
         try {
             const response = await fetch(urlProxy);
@@ -98,10 +99,10 @@
 
             if (response.ok && data.l) {
                 exibirPrevisao(data.l, previsaoDiv);
-            } else if (data.message && data.message.includes('Não Autorizado')) {
-                previsaoDiv.innerHTML = '<span class="no-vehicles">Sessão expirada. Tente fazer uma nova busca.</span>';
+            } else if (data.error) {
+                previsaoDiv.innerHTML = `<span class="no-vehicles">Erro: ${data.error}</span>`;
             } else {
-                previsaoDiv.innerHTML = `<span class="no-vehicles">Erro: ${data.error || 'Nenhuma informação de previsão disponível.'}</span>`;
+                previsaoDiv.innerHTML = `<span class="no-vehicles">Nenhuma informação de previsão disponível.</span>`;
             }
 
         } catch (error) {
