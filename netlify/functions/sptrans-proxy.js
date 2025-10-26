@@ -54,7 +54,7 @@ exports.handler = async (event, context) => {
         return { statusCode: 200, headers: corsHeaders, body: '' };
     }
 
-    // **MUDANÇA:** Lemos a operação diretamente da query string
+    // Lemos a operação diretamente da query string
     const operation = event.queryStringParameters.operation;
     
     let endpoint, queryParams;
